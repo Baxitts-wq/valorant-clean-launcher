@@ -1,69 +1,95 @@
 # valorant-clean-launcher
 
-A simple batch script I made to fix the annoying VAN 102 and VAL 5 errors on Valorant. It closes apps that conflict with Vanguard, resets the network stack, and launches the game automatically. Also runs a background watcher that keeps killing those apps if they restart mid-game.
+Scripts I made to deal with VAN 102 and VAL 5 errors on Valorant. Been getting kicked mid-game for weeks — turns out it was a mix of conflicting software and Vanguard failing to reconnect after repeated crashes. These two scripts fix both problems.
 
 ---
 
-## Why I made this
+## Files
 
-I kept getting kicked mid-game with VAN 102 / VAL 5 errors. Turns out stuff like Steam, Discord, Logitech G HUB agents and controller remappers can conflict with Vanguard even if you're not doing anything wrong. Instead of manually closing everything before each session I just automated it.
+| File | What it does |
+|------|-------------|
+| `LancerValorant.bat` | Closes conflicting apps, resets network, launches Valorant + background monitor |
+| `ReinstallVanguard.bat` | Full Vanguard reinstall — use this when VAN 102 keeps coming back |
 
 ---
 
-## What it does
+## LancerValorant.bat
 
-- Kills Steam, Epic Games, Discord, Logitech G HUB (agent + updater), controller remappers (x360ce, reWASD, Xpadder, JoyToKey), MSI Afterburner, OBS overlays
+Run this every time before you play.
+
+**What it closes:**
+- Steam, Epic Games, GOG, Origin, Battle.net
+- Logitech G HUB (agent + updater), Corsair iCUE, Razer, SteelSeries
+- Controller remappers — x360ce, reWASD, DS4Windows, Xpadder, JoyToKey
+- MSI Afterburner, RivaTuner, OBS, Overwolf, Medal.tv, Bandicam
+- VPNs — NordVPN, ExpressVPN, Surfshark, ProtonVPN, OpenVPN
+- Macro tools — AutoHotKey, AutoIt
+- Remote desktop — TeamViewer, AnyDesk, Parsec
+
+**What it does to the network:**
 - Flushes DNS cache
-- Resets Winsock and TCP/IP stack
-- Renews IP address
-- Starts a background monitor that re-kills any of those apps if they come back while you're in game
-- Launches the Riot Client directly
+- Resets Winsock
+- Resets TCP/IP stack
+- Releases and renews IP
+- Clears ARP cache
+
+**Background monitor:**
+Runs silently while you play. Every 5 seconds it checks if `vgc.exe` is still alive. If Vanguard crashes mid-game it instantly kills anything that might have caused it and sends you a Windows notification. If it crashes twice it asks if you want to close Valorant and run the reinstall.
+
+Discord stays open.
+
+**Usage:**
+1. Download `LancerValorant.bat`
+2. Double-click — it auto-elevates to admin
+3. Valorant opens on its own
 
 ---
 
-## Usage
+## ReinstallVanguard.bat
 
-1. Download `LancerValorant.bat`
-2. Right-click → **Run as administrator**
-3. That's it, Valorant will open on its own
+Use this if VAN 102 keeps happening even after using the launcher. This is what Riot Support told me to do and it actually fixed it.
 
-> [!IMPORTANT]
-> Must be run as Administrator or the network reset commands won't work.
+Based on the exact steps from Riot Support agent Genericow.
+
+**What it does:**
+- Deletes `C:\Windows\vgkbootstatus.dat`
+- Kills all Riot and Vanguard processes
+- Runs `sc delete vgc` and `sc delete vgk`
+- Cleans leftover registry entries
+- Restarts your PC automatically
+
+**Usage:**
+1. Close Valorant completely
+2. Double-click `ReinstallVanguard.bat` — auto-elevates to admin
+3. Press any key to confirm
+4. PC restarts in 10 seconds
+5. After restart — launch Valorant, Vanguard reinstalls itself
+6. If it asks to restart again — do it (Restart, not Shut down)
 
 ---
 
 ## If Riot Client doesn't launch
 
-The script looks for the client in two default locations:
+The launcher checks these paths by default:
 
 ```
 %LOCALAPPDATA%\Riot Games\Riot Client\RiotClientServices.exe
 C:\Riot Games\Riot Client\RiotClientServices.exe
+C:\Program Files\Riot Games\Riot Client\RiotClientServices.exe
 ```
 
-If yours is somewhere else, open the `.bat` with Notepad and change the `P1` variable at the top to match your actual install path.
-
----
-
-## Make it always run as admin (optional)
-
-If you want to just double-click without the right-click step every time:
-
-1. Right-click the `.bat` file → **Create shortcut**
-2. Right-click the shortcut → **Properties**
-3. Click **Advanced** → check **Run as administrator**
-4. Use the shortcut from now on
+If your install is somewhere else open `LancerValorant.bat` in Notepad and update the `P1` line.
 
 ---
 
 ## Tested on
 
 - Windows 10 / 11
-- Logitech G HUB
-- Xbox controller (with and without Steam running)
+- Logitech G HUB (mouse + keyboard)
+- Xbox controller
 
 ---
 
 ## Note
 
-This doesn't touch any game files or Vanguard itself. It only closes third-party apps before launch. Completely safe to use.
+Neither script modifies game files or touches Vanguard directly. `LancerValorant.bat` closes third-party apps. `ReinstallVanguard.bat` removes the service entries so Vanguard can reinstall cleanly — same thing Riot Support walks you through manually.

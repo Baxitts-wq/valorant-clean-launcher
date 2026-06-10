@@ -1,10 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: ============================================================
-:: Auto-elevation — echo outside if block to prevent
-:: the ) in CreateObject() from being misread by batch parser
-:: ============================================================
 if "%1"=="ELEVATED" goto MAIN
 
 echo Set UAC = CreateObject("Shell.Application") > "%temp%\elev.vbs"
@@ -14,9 +10,6 @@ del "%temp%\elev.vbs" >nul 2>&1
 exit /b
 
 :MAIN
-:: ============================================================
-:: SCRIPT START (admin rights confirmed)
-:: ============================================================
 cls
 title  VANGUARD REINSTALL
 color 0C
@@ -27,10 +20,9 @@ echo  ================================================================
 echo.
 echo  This script will :
 echo    1. Delete vgkbootstatus.dat
-echo    2. Stop vgc and vgk services
-echo    3. Run sc delete vgc and sc delete vgk
-echo    4. Clean leftover registry entries
-echo    5. Restart your PC
+echo    2. Kill Riot and Vanguard software tasks
+echo    3. Remove vgc/vgk registry keys and system services
+echo    4. Force a clean restart of your PC
 echo.
 color 0E
 echo  Save everything you have open before continuing.
@@ -40,9 +32,6 @@ color 0A
 echo  Press any key to start...
 pause >nul
 
-:: ============================================================
-:: STEP 1 — Delete vgkbootstatus.dat
-:: ============================================================
 cls
 echo.
 echo  [1/4] Deleting vgkbootstatus.dat...
@@ -60,27 +49,19 @@ if exist "C:\Windows\vgkbootstatus.dat" (
     echo  [OK] File already gone.
 )
 
-:: ============================================================
-:: STEP 2 — Stop Vanguard processes and services
-:: ============================================================
 echo.
-echo  [2/4] Stopping Vanguard services and processes...
+echo  [2/4] Killing running Riot and Vanguard tasks...
 
-net stop vgc >nul 2>&1
-net stop vgk >nul 2>&1
 taskkill /F /IM "vgtray.exe"              >nul 2>&1
-taskkill /F /IM "vgc.exe"                >nul 2>&1
-taskkill /F /IM "vgk.exe"                >nul 2>&1
 taskkill /F /IM "RiotClientServices.exe"  >nul 2>&1
 taskkill /F /IM "RiotClientUx.exe"        >nul 2>&1
+taskkill /F /IM "vgc.exe"                >nul 2>&1
+net stop vgc >nul 2>&1
 
-echo  [OK] Done.
+echo  [OK] Tasks stopped.
 
-:: ============================================================
-:: STEP 3 — sc delete vgc / vgk + registry cleanup
-:: ============================================================
 echo.
-echo  [3/4] Deleting services (sc delete)...
+echo  [3/4] Stripping service properties and cleaning registry...
 
 sc delete vgc >nul 2>&1
 echo  [OK] sc delete vgc
@@ -91,9 +72,6 @@ reg delete "HKLM\SYSTEM\CurrentControlSet\Services\vgc" /f >nul 2>&1
 reg delete "HKLM\SYSTEM\CurrentControlSet\Services\vgk" /f >nul 2>&1
 echo  [OK] Registry cleaned.
 
-:: ============================================================
-:: STEP 4 — Restart
-:: ============================================================
 echo.
 echo  [4/4] All done.
 echo.
@@ -107,10 +85,6 @@ echo      ^(Restart, NOT Shut down^)
 echo  -------------------------------------------------------
 echo.
 color 0A
-
-for /L %%i in (15,-1,1) do (
-    title  VANGUARD REINSTALL — Restarting in %%i sec...
-    timeout /t 1 /nobreak >nul
-)
-
+echo  Restarting your PC in 10 seconds. Press Ctrl+C to abort...
+timeout /t 10
 shutdown /r /t 0 /c "Vanguard Reinstall"
